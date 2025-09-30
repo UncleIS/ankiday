@@ -1,0 +1,174 @@
+# yaml-language-server: $schema=../schema/ankiday-config.schema.json
+
+# Comprehensive example showcasing all AnkiDAY configuration features
+version: 1
+backend: ankiConnect
+
+server:
+  url: http://127.0.0.1:8765
+  timeoutSeconds: 30
+
+# Pruning - enables deletion of entities not in config (DANGEROUS - use carefully)
+prune:
+  decks: false    # Delete unmanaged decks (excluding Default)
+  models: false   # Delete unmanaged note types
+  notes: false    # Delete unmanaged notes within managed decks/models
+
+# Note types/models
+models:
+  # Basic extended model
+  - name: BasicExt
+    css: |
+      .card {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 20px;
+        text-align: left;
+        padding: 20px;
+      }
+      .extra {
+        color: #666;
+        font-style: italic;
+        margin-top: 10px;
+      }
+    fields: [Front, Back, Extra]
+    templates:
+      - name: Card 1
+        qfmt: "{{Front}}"
+        afmt: "{{Front}}<hr id=answer>{{Back}}<div class=extra>{{Extra}}</div>"
+    uniqueField: Front
+
+  # Language learning model with multiple card types
+  - name: Language
+    css: |
+      .card {
+        font-family: system-ui, sans-serif;
+        font-size: 18px;
+        text-align: center;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 30px;
+        border-radius: 12px;
+      }
+      .word { font-size: 32px; font-weight: bold; margin: 20px 0; }
+      .pronunciation { color: #666; font-style: italic; }
+      .example { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 8px; }
+      .category { color: #0066cc; font-weight: bold; }
+    fields: [Word, Translation, Pronunciation, Example, Category, Image]
+    templates:
+      - name: Recognition
+        qfmt: "<div class=word>{{Word}}</div><div class=pronunciation>{{Pronunciation}}</div>"
+        afmt: "<div class=word>{{Word}}</div><div class=pronunciation>{{Pronunciation}}</div><hr id=answer><div class=word>{{Translation}}</div><div class=example>{{Example}}</div><div class=category>{{Category}}</div>{{Image}}"
+      - name: Production
+        qfmt: "<div class=word>{{Translation}}</div><div class=category>{{Category}}</div>"
+        afmt: "<div class=word>{{Translation}}</div><div class=category>{{Category}}</div><hr id=answer><div class=word>{{Word}}</div><div class=pronunciation>{{Pronunciation}}</div><div class=example>{{Example}}</div>{{Image}}"
+    uniqueField: Word
+
+  # Cloze-style model
+  - name: Cloze
+    css: |
+      .card {
+        font-family: Georgia, serif;
+        font-size: 20px;
+        line-height: 1.6;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 30px;
+      }
+      .cloze { font-weight: bold; color: #0066cc; }
+      .extra { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+    fields: [Text, Extra]
+    templates:
+      - name: Cloze
+        qfmt: "{{cloze:Text}}"
+        afmt: "{{cloze:Text}}<div class=extra>{{Extra}}</div>"
+    uniqueField: Text
+
+# Deck hierarchy - supports nested decks with ::
+decks:
+  - name: Languages
+    config: {}
+  - name: Languages::Spanish
+    config: {}
+  - name: Languages::French
+    config: {}
+  - name: Computer Science
+    config: {}
+  - name: Computer Science::Algorithms
+    config: {}
+  - name: Personal::Quotes
+    config: {}
+
+# Individual notes/flashcards
+notes:
+  # Spanish vocabulary using Language model
+  - model: Language
+    deck: Languages::Spanish
+    fields:
+      Word: "hola"
+      Translation: "hello"
+      Pronunciation: "OH-lah"
+      Example: "¡Hola! ¿Cómo estás? (Hello! How are you?)"
+      Category: "greetings"
+      Image: ""
+    tags: [spanish, greeting, basic]
+
+  - model: Language
+    deck: Languages::Spanish
+    fields:
+      Word: "gracias"
+      Translation: "thank you"
+      Pronunciation: "GRAH-see-ahs"
+      Example: "Gracias por tu ayuda. (Thank you for your help.)"
+      Category: "politeness"
+    tags: [spanish, politeness, basic]
+
+  # French vocabulary
+  - model: Language
+    deck: Languages::French
+    fields:
+      Word: "bonjour"
+      Translation: "hello/good morning"
+      Pronunciation: "bon-ZHOOR"
+      Example: "Bonjour, comment allez-vous? (Hello, how are you?)"
+      Category: "greetings"
+    tags: [french, greeting, basic]
+
+  # Computer Science concepts using BasicExt model
+  - model: BasicExt
+    deck: Computer Science::Algorithms
+    fields:
+      Front: "Big O Notation"
+      Back: "A mathematical notation that describes the limiting behavior of a function when the argument tends towards a particular value or infinity"
+      Extra: "Used to classify algorithms according to how their running time or space requirements grow as the input size grows"
+    tags: [algorithms, complexity, theory]
+
+  - model: BasicExt
+    deck: Computer Science::Algorithms
+    fields:
+      Front: "Binary Search Time Complexity"
+      Back: "O(log n)"
+      Extra: "Divides the search space in half with each comparison"
+    tags: [algorithms, search, complexity]
+
+  # Cloze deletion examples
+  - model: Cloze
+    deck: Computer Science
+    fields:
+      Text: "The {{c1::TCP}} protocol is {{c2::connection-oriented}} and provides {{c3::reliable}} data transmission."
+      Extra: "Unlike UDP which is connectionless and unreliable"
+    tags: [networking, protocols]
+
+  - model: Cloze
+    deck: Personal::Quotes
+    fields:
+      Text: "{{c1::The only way to do great work is to love what you do}} - {{c2::Steve Jobs}}"
+      Extra: "From Stanford commencement speech, 2005"
+    tags: [quotes, motivation, jobs]
+
+  # More complex examples
+  - model: BasicExt
+    deck: Languages::Spanish
+    fields:
+      Front: "Conditional Sentences (Si + Present + Future)"
+      Back: "Si estudias, aprobarás el examen"
+      Extra: "If you study, you will pass the exam"
+    tags: [spanish, grammar, conditional, intermediate]

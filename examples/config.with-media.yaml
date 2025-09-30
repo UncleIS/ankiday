@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=../schema/ankiday-config.schema.json
+
+# Example AnkiDAY configuration demonstrating media file usage
+version: 1
+backend: ankiConnect
+
+models:
+  - name: LanguageWithMedia
+    css: |
+      .card {
+        font-family: system-ui, sans-serif;
+        font-size: 20px;
+        text-align: center;
+        padding: 30px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 12px;
+      }
+      .word { font-size: 32px; font-weight: bold; margin: 20px 0; color: #2c3e50; }
+      .pronunciation { color: #7f8c8d; font-style: italic; margin: 10px 0; }
+      .media-container { margin: 20px 0; }
+      .media-container img { max-width: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      .example { background: rgba(255,255,255,0.8); padding: 15px; margin: 15px 0; border-radius: 8px; }
+    fields: [Word, Translation, Pronunciation, Example, Image, Audio]
+    templates:
+      - name: Recognition
+        qfmt: |
+          <div class=word>{{Word}}</div>
+          <div class=pronunciation>{{Pronunciation}}</div>
+          <div class=media-container>{{Image}}</div>
+          {{Audio}}
+        afmt: |
+          <div class=word>{{Word}}</div>
+          <div class=pronunciation>{{Pronunciation}}</div>
+          <div class=media-container>{{Image}}</div>
+          {{Audio}}
+          <hr id=answer>
+          <div class=word>{{Translation}}</div>
+          <div class=example>{{Example}}</div>
+    uniqueField: Word
+
+decks:
+  - name: Languages::Spanish::WithMedia
+    config: {}
+
+notes:
+  # Note with image media
+  - model: LanguageWithMedia
+    deck: Languages::Spanish::WithMedia
+    fields:
+      Word: "hola"
+      Translation: "hello"
+      Pronunciation: "OH-lah"
+      Example: "¡Hola! ¿Cómo estás? (Hello! How are you?)"
+      Image: '<img src="sample.svg" alt="Hello illustration">'
+      Audio: ""
+    tags: [spanish, greeting, basic, with-media]
+    media:
+      - "media/sample.svg"
+  
+  # Note with audio media (simulated with text file)
+  - model: LanguageWithMedia
+    deck: Languages::Spanish::WithMedia
+    fields:
+      Word: "gracias"
+      Translation: "thank you"
+      Pronunciation: "GRAH-see-ahs"
+      Example: "Gracias por tu ayuda. (Thank you for your help.)"
+      Image: ""
+      Audio: '[sound:pronunciation.txt]'
+    tags: [spanish, politeness, basic, with-media]
+    media:
+      - "media/pronunciation.txt"
+  
+  # Note with multiple media files
+  - model: LanguageWithMedia
+    deck: Languages::Spanish::WithMedia
+    fields:
+      Word: "buenos días"
+      Translation: "good morning"
+      Pronunciation: "BWAY-nos DEE-ahs"
+      Example: "Buenos días, ¿cómo amaneció? (Good morning, how did you wake up?)"
+      Image: '<img src="sample.svg" alt="Morning greeting">'
+      Audio: '[sound:pronunciation.txt]'
+    tags: [spanish, greeting, time, with-media]
+    media:
+      - "media/sample.svg"
+      - "media/pronunciation.txt"

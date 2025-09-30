@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/your-repo/ankiday/schema/ankiday-config.schema.json",
+  "title": "AnkiDAY Configuration",
+  "description": "Configuration schema for AnkiDAY - Anki Deck as YAML management tool",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Configuration schema version",
+      "enum": [1],
+      "default": 1
+    },
+    "backend": {
+      "type": "string",
+      "description": "Backend to use for Anki integration",
+      "enum": ["ankiConnect", "ankiPython"],
+      "default": "ankiConnect"
+    },
+    "server": {
+      "type": "object",
+      "description": "AnkiConnect server configuration",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "AnkiConnect server URL",
+          "format": "uri",
+          "default": "http://127.0.0.1:8765"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "description": "Connection timeout in seconds",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30
+        }
+      },
+      "additionalProperties": false
+    },
+    "prune": {
+      "type": "object",
+      "description": "Pruning configuration - delete entities not present in config",
+      "properties": {
+        "decks": {
+          "type": "boolean",
+          "description": "Delete decks not present in config (excludes Default deck)",
+          "default": false
+        },
+        "models": {
+          "type": "boolean", 
+          "description": "Delete models/note types not present in config",
+          "default": false
+        },
+        "notes": {
+          "type": "boolean",
+          "description": "Delete notes not present in config within managed decks/models",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "models": {
+      "type": "array",
+      "description": "Note types/models to create or update",
+      "items": {
+        "$ref": "#/$defs/model"
+      }
+    },
+    "decks": {
+      "type": "array", 
+      "description": "Decks to create (supports nested decks with :: separator)",
+      "items": {
+        "$ref": "#/$defs/deck"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "description": "Individual notes to create or update",
+      "items": {
+        "$ref": "#/$defs/note"
+      }
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "model": {
+      "type": "object",
+      "description": "Anki note type/model definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the note type/model",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "array",
+          "description": "List of field names for this note type",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "templates": {
+          "type": "array",
+          "description": "Card templates for this note type",
+          "items": {
+            "$ref": "#/$defs/template"
+          },
+          "minItems": 1
+        },
+        "css": {
+          "type": "string",
+          "description": "CSS styling for cards of this note type",
+          "default": ""
+        },
+        "uniqueField": {
+          "type": "string",
+          "description": "Field name to use for note upsert/matching (must be one of the fields)",
+          "minLength": 1
+        }
+      },
+      "required": ["name", "fields", "templates", "uniqueField"],
+      "additionalProperties": false
+    },
+    "template": {
+      "type": "object",
+      "description": "Card template definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the card template",
+          "minLength": 1
+        },
+        "qfmt": {
+          "type": "string",
+          "description": "Question format template (front side) - use {{Field}} syntax",
+          "minLength": 1
+        },
+        "afmt": {
+          "type": "string", 
+          "description": "Answer format template (back side) - use {{Field}} syntax",
+          "minLength": 1
+        }
+      },
+      "required": ["name", "qfmt", "afmt"],
+      "additionalProperties": false
+    },
+    "deck": {
+      "type": "object",
+      "description": "Anki deck definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Deck name (use :: for nested decks, e.g., 'Languages::Spanish')",
+          "minLength": 1,
+          "pattern": "^[^:]*(::[^:]+)*$"
+        },
+        "config": {
+          "type": "object",
+          "description": "Deck-specific configuration options",
+          "additionalProperties": true
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "note": {
+      "type": "object", 
+      "description": "Individual note/flashcard",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Name of the note type/model to use (must match a model name in config)",
+          "minLength": 1
+        },
+        "deck": {
+          "type": "string",
+          "description": "Name of the deck to place this note in (must match a deck name in config)",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "object",
+          "description": "Field values for this note (keys must match model fields)",
+          "patternProperties": {
+            "^.+$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "minProperties": 1
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags to apply to this note",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\s]+$"
+          },
+          "uniqueItems": true
+        },
+        "media": {
+          "type": "array",
+          "description": "List of local file paths to upload as media files (images, audio, etc.)",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": ["model", "deck", "fields"],
+      "additionalProperties": false
+    }
+  }
+}
