@@ -116,7 +116,20 @@ class Planner:
                 quoted_val = f'"{uniq_val}"'
             else:
                 quoted_val = uniq_val
-            query = f"deck:{n.deck} note:{n.model} {uniq}:{quoted_val}"
+            
+            # Quote deck name if it contains spaces or colons (Anki search syntax)
+            if ' ' in n.deck or '::' in n.deck:
+                deck_part = f'"deck:{n.deck}"'
+            else:
+                deck_part = f'deck:{n.deck}'
+                
+            # Quote model name if it contains spaces
+            if ' ' in n.model:
+                note_part = f'"note:{n.model}"'
+            else:
+                note_part = f'note:{n.model}'
+            
+            query = f'{deck_part} {note_part} {uniq}:{quoted_val}'
             ids = self.backend.find_notes(query)
             if not ids:
                 note_data = n.model_dump()
