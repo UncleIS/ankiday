@@ -47,7 +47,7 @@
           "default": false
         },
         "models": {
-          "type": "boolean", 
+          "type": "boolean",
           "description": "Delete models/note types not present in config",
           "default": false
         },
@@ -67,7 +67,7 @@
       }
     },
     "decks": {
-      "type": "array", 
+      "type": "array",
       "description": "Decks to create (supports nested decks with :: separator)",
       "items": {
         "$ref": "#/$defs/deck"
@@ -111,6 +111,11 @@
           },
           "minItems": 1
         },
+        "isCloze": {
+          "type": "boolean",
+          "description": "Whether this is a Cloze deletion model (enables cloze card functionality)",
+          "default": false
+        },
         "css": {
           "type": "string",
           "description": "CSS styling for cards of this note type",
@@ -140,7 +145,7 @@
           "minLength": 1
         },
         "afmt": {
-          "type": "string", 
+          "type": "string",
           "description": "Answer format template (back side) - use {{Field}} syntax",
           "minLength": 1
         }
@@ -168,7 +173,7 @@
       "additionalProperties": false
     },
     "note": {
-      "type": "object", 
+      "type": "object",
       "description": "Individual note/flashcard",
       "properties": {
         "model": {

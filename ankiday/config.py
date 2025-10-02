@@ -22,6 +22,7 @@ class Model(BaseModel):
     name: str
     fields: List[str]
     templates: List[Template]
+    isCloze: bool = Field(default=False, description="Whether this is a Cloze deletion model")
     css: str = Field(default="")
     uniqueField: str
 

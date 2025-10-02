@@ -42,18 +42,28 @@ class AnkiConnectBackend(Backend):
     def model_field_names(self, model_name: str) -> List[str]:
         return list(self._invoke("modelFieldNames", {"modelName": model_name}) or [])
 
-    def create_model(self, name: str, fields: List[str], templates: List[Dict[str, str]], css: str) -> None:
+    def create_model(self, name: str, fields: List[str], templates: List[Dict[str, str]], css: str, is_cloze: bool = False) -> None:
         # anki-connect expects templates array of {Name, Front, Back}
         tps = [{"Name": t["name"], "Front": t["qfmt"], "Back": t["afmt"]} for t in templates]
-        self._invoke(
-            "createModel",
-            {
-                "modelName": name,
-                "inOrderFields": fields,
-                "css": css,
-                "cardTemplates": tps,
-            },
-        )
+        params = {
+            "modelName": name,
+            "inOrderFields": fields,
+            "css": css,
+            "cardTemplates": tps,
+        }
+        if is_cloze:
+            params["isCloze"] = True
+
+        # Debug logging
+        print(f"DEBUG: Creating model '{name}' with is_cloze={is_cloze}")
+        print(f"DEBUG: Params being sent to AnkiConnect: {params}")
+
+        try:
+            result = self._invoke("createModel", params)
+            print(f"DEBUG: Model creation result: {result}")
+        except Exception as e:
+            print(f"DEBUG: Model creation failed: {e}")
+            raise
 
     def update_model_templates(self, name: str, templates: List[Dict[str, str]]) -> None:
         # Convert our template format to AnkiConnect's expected format
@@ -65,7 +75,7 @@ class AnkiConnectBackend(Backend):
                 "Front": t["qfmt"],
                 "Back": t["afmt"]
             }
-        
+
         self._invoke(
             "updateModelTemplates",
             {
@@ -78,10 +88,10 @@ class AnkiConnectBackend(Backend):
 
     def update_model_styling(self, name: str, css: str) -> None:
         self._invoke(
-            "updateModelStyling", 
+            "updateModelStyling",
             {
                 "model": {
-                    "name": name, 
+                    "name": name,
                     "css": css
                 }
             }
@@ -95,19 +105,27 @@ class AnkiConnectBackend(Backend):
         return list(self._invoke("findNotes", {"query": query}) or [])
 
     def add_note(self, model: str, deck: str, fields: Dict[str, str], tags: List[str]) -> int:
-        nid = self._invoke(
-            "addNote",
-            {
-                "note": {
-                    "deckName": deck,
-                    "modelName": model,
-                    "fields": fields,
-                    "tags": tags,
-                    # options could be extended
-                }
-            },
-        )
-        return int(nid)
+        note_data = {
+            "note": {
+                "deckName": deck,
+                "modelName": model,
+                "fields": fields,
+                "tags": tags,
+                # options could be extended
+            }
+        }
+
+        # Debug logging
+        print(f"DEBUG: Adding note to model '{model}' in deck '{deck}'")
+        print(f"DEBUG: Note data: {note_data}")
+
+        try:
+            nid = self._invoke("addNote", note_data)
+            print(f"DEBUG: Note creation result: {nid}")
+            return int(nid)
+        except Exception as e:
+            print(f"DEBUG: Note creation failed: {e}")
+            raise
 
     def update_note_fields(self, note_id: int, fields: Dict[str, str]) -> None:
         self._invoke("updateNoteFields", {"note": {"id": note_id, "fields": fields}})

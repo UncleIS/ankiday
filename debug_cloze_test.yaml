@@ -1,0 +1,37 @@
+version: 1
+backend: ankiConnect
+
+server:
+  url: http://127.0.0.1:8765
+  timeoutSeconds: 30
+
+models:
+  - name: DebugCloze
+    isCloze: true
+    css: |
+      .card {
+        font-family: arial;
+        font-size: 20px;
+        text-align: center;
+      }
+      .cloze {
+        font-weight: bold;
+        color: blue;
+      }
+    fields: [Text, Extra]
+    templates:
+      - name: Cloze
+        qfmt: '{{cloze:Text}}'
+        afmt: '{{cloze:Text}}<br>{{Extra}}'
+    uniqueField: Text
+
+decks:
+  - name: DebugTest
+
+notes:
+  - model: DebugCloze
+    deck: DebugTest
+    fields:
+      Text: "The capital of {{c1::France}} is {{c2::Paris}}."
+      Extra: "Geography test"
+    tags: [debug, test]

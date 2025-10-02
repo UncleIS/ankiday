@@ -29,6 +29,7 @@ class Backend:
         fields: List[str],
         templates: List[Dict[str, str]],
         css: str,
+        is_cloze: bool = False,
     ) -> None:
         raise NotImplementedError
 

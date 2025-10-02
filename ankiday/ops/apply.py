@@ -66,6 +66,7 @@ class Planner:
                         "fields": m.fields,
                         "templates": [t.model_dump() for t in m.templates],
                         "css": m.css,
+                        "isCloze": m.isCloze,
                     },
                 )
             else:
@@ -116,19 +117,19 @@ class Planner:
                 quoted_val = f'"{uniq_val}"'
             else:
                 quoted_val = uniq_val
-            
+
             # Quote deck name if it contains spaces or colons (Anki search syntax)
             if ' ' in n.deck or '::' in n.deck:
                 deck_part = f'"deck:{n.deck}"'
             else:
                 deck_part = f'deck:{n.deck}'
-                
+
             # Quote model name if it contains spaces
             if ' ' in n.model:
                 note_part = f'"note:{n.model}"'
             else:
                 note_part = f'note:{n.model}'
-            
+
             query = f'{deck_part} {note_part} {uniq}:{quoted_val}'
             ids = self.backend.find_notes(query)
             if not ids:
@@ -157,23 +158,23 @@ class Planner:
 def process_media_files(backend: Backend, media_paths: List[str], config_dir: Path) -> Dict[str, str]:
     """Process media files and return mapping of original paths to Anki filenames."""
     media_mapping = {}
-    
+
     for media_path in media_paths:
         # Convert to Path and handle relative paths
         path = Path(media_path)
         if not path.is_absolute():
             path = config_dir / path
-            
+
         if not path.exists():
             raise FileNotFoundError(f"Media file not found: {media_path} (resolved to {path})")
-            
+
         # Read file content
         with path.open('rb') as f:
             file_data = f.read()
-            
+
         # Generate a unique filename (preserve extension)
         filename = path.name
-        
+
         # Check if file already exists in Anki
         existing_files = backend.get_media_files_names(filename)
         if filename not in existing_files:
@@ -183,7 +184,7 @@ def process_media_files(backend: Backend, media_paths: List[str], config_dir: Pa
         else:
             # File already exists, use existing name
             media_mapping[media_path] = filename
-            
+
     return media_mapping
 
 
@@ -195,7 +196,7 @@ class Applier:
         # Get config directory for resolving relative media paths
         if config_dir is None:
             config_dir = Path.cwd()
-            
+
         # Execute in order
         for s in plan.steps:
             if s.kind == "deck.create":
@@ -204,15 +205,15 @@ class Applier:
                 self.backend.delete_decks([s.payload["name"]], cards_too=s.payload.get("cardsToo", False))
             elif s.kind == "model.create":
                 p = s.payload
-                self.backend.create_model(p["name"], p["fields"], p["templates"], p["css"])
+                self.backend.create_model(p["name"], p["fields"], p["templates"], p["css"], p.get("isCloze", False))
             elif s.kind == "model.updateTemplates":
                 p = s.payload
-                self.backend.update_model_templates(p["name"], p["templates"]) 
+                self.backend.update_model_templates(p["name"], p["templates"])
             elif s.kind == "model.updateStyling":
                 p = s.payload
-                self.backend.update_model_styling(p["name"], p["css"]) 
+                self.backend.update_model_styling(p["name"], p["css"])
             elif s.kind == "model.delete":
-                self.backend.delete_model(s.payload["name"]) 
+                self.backend.delete_model(s.payload["name"])
             elif s.kind == "note.add":
                 n = s.payload["note"]
                 # Process media files if present

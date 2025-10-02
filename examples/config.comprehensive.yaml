@@ -10,9 +10,9 @@ server:
 
 # Pruning - enables deletion of entities not in config (DANGEROUS - use carefully)
 prune:
-  decks: false    # Delete unmanaged decks (excluding Default)
-  models: false   # Delete unmanaged note types
-  notes: false    # Delete unmanaged notes within managed decks/models
+  decks: false # Delete unmanaged decks (excluding Default)
+  models: false # Delete unmanaged note types
+  notes: false # Delete unmanaged notes within managed decks/models
 
 # Note types/models
 models:
@@ -62,8 +62,9 @@ models:
         afmt: "<div class=word>{{Translation}}</div><div class=category>{{Category}}</div><hr id=answer><div class=word>{{Word}}</div><div class=pronunciation>{{Pronunciation}}</div><div class=example>{{Example}}</div>{{Image}}"
     uniqueField: Word
 
-  # Cloze-style model
+  # Cloze deletion model (proper cloze model)
   - name: Cloze
+    isCloze: true
     css: |
       .card {
         font-family: Georgia, serif;

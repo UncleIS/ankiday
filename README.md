@@ -10,6 +10,7 @@ A Python CLI to manage Anki decks, note types (models), and notes from YAML conf
 Features
 - Create/update/delete decks
 - Create/update note types (fields, templates, CSS)
+- **Cloze deletion models**: Full support for creating proper cloze models with `isCloze: true`
 - Upsert notes idempotently using a model-defined unique field
 - **Media file support**: Automatically upload images, audio, and other media files
 - Optional pruning of entities not present in config

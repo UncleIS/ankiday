@@ -1,0 +1,145 @@
+# Example configuration for Cloze deletion cards in Ankiday
+# This demonstrates how to create and use Cloze models with the isCloze parameter
+
+version: 1
+backend: ankiConnect
+
+server:
+  url: http://127.0.0.1:8765
+  timeoutSeconds: 30
+
+models:
+  # Basic Cloze model - the most common setup
+  - name: BasicCloze
+    isCloze: true
+    css: |
+      .card {
+        font-family: arial;
+        font-size: 20px;
+        text-align: center;
+        color: black;
+        background-color: white;
+      }
+      .cloze {
+        font-weight: bold;
+        color: blue;
+      }
+      .nightMode .cloze {
+        color: lightblue;
+      }
+    fields: [Text, Extra]
+    templates:
+      - name: Cloze
+        qfmt: '{{cloze:Text}}'
+        afmt: '{{cloze:Text}}<br>{{#Extra}}<hr id="extra">{{Extra}}{{/Extra}}'
+    uniqueField: Text
+
+  # Advanced Cloze model with additional fields
+  - name: AdvancedCloze
+    isCloze: true
+    css: |
+      .card {
+        font-family: Georgia, serif;
+        font-size: 18px;
+        text-align: left;
+        color: #333;
+        background-color: #fafafa;
+        padding: 20px;
+      }
+      .cloze {
+        font-weight: bold;
+        color: #d73502;
+        background-color: #ffe6e1;
+        padding: 2px 4px;
+        border-radius: 3px;
+      }
+      .source {
+        font-style: italic;
+        color: #666;
+        font-size: 14px;
+        margin-top: 15px;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+      }
+      .hint {
+        color: #888;
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+    fields: [Text, Hint, Source, Extra]
+    templates:
+      - name: Cloze
+        qfmt: |
+          {{#Hint}}<div class="hint">💡 {{Hint}}</div>{{/Hint}}
+          {{cloze:Text}}
+        afmt: |
+          {{#Hint}}<div class="hint">💡 {{Hint}}</div>{{/Hint}}
+          {{cloze:Text}}
+          {{#Extra}}<hr>{{Extra}}{{/Extra}}
+          {{#Source}}<div class="source">📖 Source: {{Source}}</div>{{/Source}}
+    uniqueField: Text
+
+decks:
+  - name: Languages::Spanish
+  - name: Science::Biology
+  - name: Programming::Python
+
+notes:
+  # Spanish vocabulary examples
+  - model: BasicCloze
+    deck: Languages::Spanish
+    fields:
+      Text: "The Spanish word for 'hello' is {{c1::hola}}."
+      Extra: "This is a common greeting used throughout the day."
+    tags: [spanish, greetings, vocabulary]
+
+  - model: AdvancedCloze
+    deck: Languages::Spanish
+    fields:
+      Text: "In Spanish, {{c1::ser}} and {{c2::estar}} both mean 'to be', but {{c1::ser}} is used for {{c3::permanent characteristics}} while {{c2::estar}} is used for {{c4::temporary states}}."
+      Hint: "Think about permanent vs temporary"
+      Source: "Spanish Grammar Fundamentals, Chapter 3"
+      Extra: "Examples: 'Soy profesor' (I am a teacher) vs 'Estoy cansado' (I am tired)"
+    tags: [spanish, grammar, verbs, ser-estar]
+
+  # Biology examples
+  - model: BasicCloze
+    deck: Science::Biology
+    fields:
+      Text: "The process by which plants convert sunlight into energy is called {{c1::photosynthesis}}."
+      Extra: "This occurs primarily in the chloroplasts of plant cells."
+    tags: [biology, photosynthesis, plants]
+
+  - model: AdvancedCloze
+    deck: Science::Biology
+    fields:
+      Text: "DNA replication occurs during the {{c1::S phase}} of the cell cycle, and is carried out by the enzyme {{c2::DNA polymerase}}. The process is {{c3::semi-conservative}}, meaning each new DNA molecule contains {{c4::one original strand and one new strand}}."
+      Hint: "Think about when cells duplicate their genetic material"
+      Source: "Campbell Biology, 12th Edition"
+      Extra: "This ensures genetic continuity across cell generations."
+    tags: [biology, dna, replication, cell-cycle]
+
+  # Programming examples
+  - model: BasicCloze
+    deck: Programming::Python
+    fields:
+      Text: "In Python, you can create a list using {{c1::square brackets}} like this: {{c2::[1, 2, 3, 4]}}."
+      Extra: "Lists are mutable, meaning you can change their contents after creation."
+    tags: [python, lists, data-structures]
+
+  - model: AdvancedCloze
+    deck: Programming::Python
+    fields:
+      Text: "The {{c1::list comprehension}} syntax {{c2::[x**2 for x in range(10)]}} creates a list of {{c3::squares}} from {{c4::0 to 81}}. This is more {{c5::efficient}} than using a traditional for loop."
+      Hint: "A Pythonic way to create lists"
+      Source: "Python Documentation - List Comprehensions"
+      Extra: "List comprehensions are generally faster than equivalent for loops because they're optimized at the C level."
+    tags: [python, list-comprehensions, optimization]
+
+# Tips for using Cloze cards effectively:
+# 1. Use {{c1::text}} for the first cloze deletion, {{c2::text}} for the second, etc.
+# 2. You can have multiple cloze deletions in a single note
+# 3. The isCloze: true parameter is REQUIRED for cloze models
+# 4. Use the cloze:FieldName syntax in your templates
+# 5. Keep cloze deletions focused on key information
+# 6. Use hints sparingly to avoid making cards too easy
