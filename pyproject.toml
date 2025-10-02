@@ -11,7 +11,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "GPL-3.0-or-later" }
 keywords = ["anki", "ankiconnect", "flashcards", "cli", "yaml", "deck-as-yaml"]
 dependencies = [
   "typer[all]>=0.12.0",

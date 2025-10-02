@@ -4,6 +4,8 @@ A Python CLI to manage Anki decks, note types (models), and notes from YAML conf
 
 **AnkiDAY** = **Anki - Deck as YAML**
 
+> **Disclaimer**: This project is NOT affiliated with, endorsed by, or connected to Anki or the AnkiWeb service. AnkiDAY is an independent third-party tool that interacts with Anki through the AnkiConnect add-on. All trademarks are property of their respective owners.
+
 - Default backend: AnkiConnect (localhost:8765)
 - Future backend: Anki Python API (out-of-process collection manipulation)
 
@@ -18,67 +20,160 @@ Features
 
 ## Installation
 
-1. **Prerequisites**: Ensure Python 3.10+
-2. **Install Anki**: Download and install [Anki](https://apps.ankiweb.net/)
-3. **Install AnkiConnect add-on**: 
-   - In Anki, go to Tools > Add-ons > Get Add-ons
+### Prerequisites
+1. **Python 3.10+**: Ensure you have Python 3.10 or later installed
+   - **Windows**: Download from [python.org](https://www.python.org/downloads/) (make sure to check "Add to PATH")
+   - **macOS**: Use Homebrew (`brew install python`) or download from python.org
+   - **Linux**: Use your package manager (`apt install python3`, `dnf install python3`, etc.)
+2. **Anki Desktop**: Download and install [Anki](https://apps.ankiweb.net/) for your platform
+3. **AnkiConnect Add-on**:
+   - Open Anki
+   - Go to Tools → Add-ons → Get Add-ons
    - Enter code: `2055492159`
-   - Restart Anki
-4. **Install this tool**:
+   - Click OK and restart Anki
+   - Verify AnkiConnect is working by visiting http://127.0.0.1:8765 in your browser (should show a simple page)
+
+### Install AnkiDAY
+
+**Method 1: From source (recommended)**
+```bash
+git clone https://github.com/yourusername/ankiday.git
+cd ankiday
+pip install -e .
+```
+
+**Method 2: Direct installation (when published)**
+```bash
+pip install ankiday
+```
+
+> **Note**: On some systems (especially macOS), you may need to add Python's bin directory to your PATH or create a symlink. See the troubleshooting section below if the `ankiday` command is not found after installation.
+
+### Platform Support
+
+- **macOS**: Tested and fully supported
+- **Linux**: Should work (cross-platform dependencies)
+- **Windows**: Should work but **untested** (see Windows-specific instructions below)
+
+### Verify Installation
+```bash
+ankiday --help
+```
+
+### Troubleshooting Installation
+
+**If `ankiday` command is not found:**
+
+1. **Find where ankiday was installed:**
    ```bash
-   git clone <this-repo>
-   cd ankiday
-   pip3 install -e .
+   python3 -c "import sys; print(sys.executable.replace('/python3', '/ankiday'))"
    ```
-5. **Keep Anki running** with AnkiConnect enabled (verify at http://127.0.0.1:8765)
+
+2. **Test the command directly:**
+   ```bash
+   # Use the path from step 1, for example:
+   /Library/Frameworks/Python.framework/Versions/3.12/bin/ankiday --help
+   ```
+
+3. **Fix the PATH (choose one method):**
+
+   **Option A - Add to PATH permanently:**
+   ```bash
+   # Replace with your actual path from step 1
+   echo 'export PATH="/Library/Frameworks/Python.framework/Versions/3.12/bin:$PATH"' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+   **Option B - Create symlink:**
+   ```bash
+   # Replace with your actual path from step 1
+   sudo ln -sf /Library/Frameworks/Python.framework/Versions/3.12/bin/ankiday /usr/local/bin/ankiday
+   ```
+
+4. **Verify it works:**
+   ```bash
+   ankiday --help
+   ```
+
+**Windows users (untested):**
+
+If `ankiday` command is not found on Windows:
+
+1. **Find ankiday location:**
+   ```cmd
+   python -c "import sys; print(sys.executable.replace('python.exe', 'Scripts\\ankiday.exe'))"
+   ```
+
+2. **Test command directly:**
+   ```cmd
+   # Use the path from step 1, for example:
+   C:\Python310\Scripts\ankiday.exe --help
+   ```
+
+3. **Add to PATH (PowerShell):**
+   ```powershell
+   # Replace with your actual path from step 1
+   $env:PATH += ";C:\Python310\Scripts"
+   # To make permanent, add to your PowerShell profile
+   ```
+
+4. **Alternative - Use full path:**
+   ```cmd
+   C:\Python310\Scripts\ankiday.exe validate -f config.yaml
+   ```
+
+> **Windows Note**: AnkiDAY uses cross-platform Python libraries and should work on Windows, but hasn't been tested. The main difference is using `.exe` extensions and different path syntax. Please report any Windows-specific issues!
+
+**Important**: Always keep Anki running with the AnkiConnect add-on enabled when using AnkiDAY.
 
 ## Usage
 
 ### Quick Start
 
-1. See the example config at `examples/config.example.yaml`
-2. **IDE Support**: Add this line at the top of your YAML files for autocompletion and validation:
+1. **Start Anki** and ensure AnkiConnect is running (visit http://127.0.0.1:8765 to verify)
+2. **Create a config file**: See the example at `examples/config.example.yaml`
+3. **IDE Support** (optional): Add this line at the top of your YAML files for autocompletion:
    ```yaml
    # yaml-language-server: $schema=../schema/ankiday-config.schema.json
    ```
-2. Validate your config:
+4. **Validate** your config:
    ```bash
-   ./run_ankiday.py validate -f examples/config.example.yaml
+   ankiday validate -f examples/config.example.yaml
    ```
-3. Preview changes (dry-run):
+5. **Preview changes** (dry-run):
    ```bash
-   ./run_ankiday.py diff -f examples/config.example.yaml
+   ankiday diff -f examples/config.example.yaml
    ```
-4. Apply the configuration:
+6. **Apply** the configuration:
    ```bash
-   ./run_ankiday.py apply -f examples/config.example.yaml
+   ankiday apply -f examples/config.example.yaml
    ```
 
 ### Commands
 
 **Validate config**
 ```bash
-./run_ankiday.py validate -f examples/config.example.yaml
+ankiday validate -f examples/config.example.yaml
 ```
 
 **Show a diff of intended changes (no side effects)**
 ```bash
-./run_ankiday.py diff -f examples/config.example.yaml
+ankiday diff -f examples/config.example.yaml
 ```
 
 **Apply changes**
 ```bash
-./run_ankiday.py apply -f examples/config.example.yaml
+ankiday apply -f examples/config.example.yaml
 ```
 
 **List current entities from Anki**
 ```bash
-./run_ankiday.py list --decks --models --notes-limit 20
+ankiday list --decks --models --notes-limit 20
 ```
 
 **Delete entities explicitly (dangerous)**
 ```bash
-./run_ankiday.py delete --deck "My::Deck" --model "MyModel" --note-query "deck:My::Deck tag:obsolete"
+ankiday delete --deck "My::Deck" --model "MyModel" --note-query "deck:My::Deck tag:obsolete"
 ```
 
 Configuration design (YAML)
@@ -134,7 +229,7 @@ notes:
 
 - **Schema file**: `schema/ankiday-config.schema.json`
 - **Documentation**: See `docs/SCHEMA.md` for IDE setup instructions
-- **Examples**: 
+- **Examples**:
   - Basic: `examples/config.example.yaml`
   - Comprehensive: `examples/config.comprehensive.yaml`
   - Media Support: `examples/config.with-media.yaml`
@@ -209,7 +304,7 @@ my-flashcards/
 1. Place media files in your project directory
 2. Reference them in the `media` field of your notes
 3. Reference uploaded files in note fields using HTML or `[sound:]` syntax
-4. Run `./run_ankiday.py apply` to upload media and create/update notes
+4. Run `ankiday apply` to upload media and create/update notes
 
 ## Design Notes
 
@@ -220,116 +315,3 @@ my-flashcards/
 
 Limitations
 - Template and CSS updates use model-wide operations (styling/templates). Field reordering is supported, but removing a field that has data in Anki may require manual cleanup.
-
-## Media Support Implementation
-
-This section documents the technical implementation of media file support in AnkiDAY.
-
-### 🎯 What Was Implemented
-
-Complete media file support for AnkiDAY, allowing users to automatically upload and reference images, audio, and other media files in their Anki flashcards.
-
-### 🔧 Technical Changes
-
-#### 1. Configuration Schema Extension (`ankiday/config.py`)
-- Extended `Note` model with `media` field: `List[str]` with default empty list
-- Updated JSON schema to include media field validation
-- Maintains backward compatibility (media field is optional)
-
-#### 2. Backend Interface (`ankiday/backends/base.py`)
-- Added abstract methods for media operations:
-  - `store_media_file(filename: str, data: bytes) -> str`
-  - `get_media_files_names(pattern: str = "*") -> List[str]`
-  - `retrieve_media_file(filename: str) -> bytes`
-  - `delete_media_file(filename: str) -> None`
-
-#### 3. AnkiConnect Backend (`ankiday/backends/ankiconnect.py`)
-- Implemented all media methods using AnkiConnect API
-- Uses base64 encoding for file transfer
-- Maps to AnkiConnect actions: `storeMediaFile`, `getMediaFilesNames`, `retrieveMediaFile`, `deleteMediaFile`
-
-#### 4. Operations Logic (`ankiday/ops/apply.py`)
-- Extended `upload_media_for_note()` helper function
-- Resolves media file paths relative to config directory
-- Uploads media files before adding/updating notes
-- Handles file existence checking and error reporting
-
-#### 5. JSON Schema (`schema/ankiday-config.schema.json`)
-- Added `media` property to note definition
-- Type: array of strings
-- Description and examples included
-
-### 📁 Files Created/Modified
-
-#### Modified Files
-- `ankiday/config.py` - Added media field to Note model
-- `ankiday/backends/base.py` - Added abstract media methods
-- `ankiday/backends/ankiconnect.py` - Implemented media operations
-- `ankiday/ops/apply.py` - Added media upload logic
-- `schema/ankiday-config.schema.json` - Extended schema for media
-- `.vscode/settings.json.example` - Fixed schema reference
-
-#### New Files
-- `examples/config.with-media.yaml` - Comprehensive media example
-- `examples/media/sample.svg` - Sample media file
-- `examples/media/audio.txt` - Placeholder audio file
-- `tests/test_media.py` - Unit tests for media functionality
-- `tests/test_media_integration.py` - Integration tests
-
-### ✅ Features Implemented
-
-#### Core Functionality
-- ✅ Media file path specification in config
-- ✅ Automatic media upload to Anki
-- ✅ Relative and absolute path support
-- ✅ Base64 encoding/decoding for file transfer
-- ✅ Idempotent behavior (no duplicate uploads)
-
-#### Configuration Support
-- ✅ YAML configuration with `media` field
-- ✅ JSON schema validation
-- ✅ Backward compatibility
-- ✅ File path resolution
-
-#### API Integration
-- ✅ AnkiConnect media commands
-- ✅ Error handling and reporting
-- ✅ File existence checking
-- ✅ Media listing functionality
-
-#### Testing & Validation
-- ✅ Unit tests for media configuration
-- ✅ Integration tests for backend operations
-- ✅ Schema validation tests
-- ✅ File path resolution tests
-- ✅ Base64 encoding tests
-
-### 🏗️ Architecture
-
-```
-User Config (YAML)
-       ↓
-   Config Parser (validates media field)
-       ↓
-   Apply Operations (resolves paths, uploads media)
-       ↓  
-   AnkiConnect Backend (base64 transfer)
-       ↓
-   AnkiConnect Server (stores in Anki collection)
-```
-
-### 🔄 Implementation Workflow
-
-1. User specifies media files in `media` field of notes
-2. AnkiDAY resolves file paths relative to config directory  
-3. Files are read and base64-encoded
-4. Media files uploaded via AnkiConnect `storeMediaFile`
-5. Notes created/updated with media references in fields
-6. Subsequent runs check existing media to avoid duplicates
-
-### 🧪 Testing Coverage
-
-- **Unit Tests**: Media field validation, path resolution, encoding
-- **Integration Tests**: Backend methods, config loading, file operations
-- **Schema Tests**: JSON schema validation of media configurations
-- **Manual Tests**: End-to-end workflow with real AnkiConnect
