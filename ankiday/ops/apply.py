@@ -36,15 +36,24 @@ class Plan:
 
 
 class Planner:
-    def __init__(self, backend: Backend):
+    def __init__(self, backend: Backend, verbose: bool = False):
         self.backend = backend
+        self.verbose = verbose
+    
+    def _log_verbose(self, message: str) -> None:
+        """Log message if verbose mode is enabled."""
+        if self.verbose:
+            print(f"[PLANNER] {message}")
 
     def build_plan(self, cfg: Config) -> Plan:
+        self._log_verbose("Starting plan generation")
         plan = Plan()
 
         # Decks
+        self._log_verbose("Analyzing deck configuration")
         existing_decks = set(self.backend.list_decks())
         desired_decks = {d.name for d in cfg.decks}
+        self._log_verbose(f"Found {len(existing_decks)} existing decks, {len(desired_decks)} desired decks")
         for d in sorted(desired_decks - existing_decks):
             plan.add("deck.create", f"Create deck '{d}'", {"name": d})
         if cfg.prune.decks:
@@ -54,8 +63,10 @@ class Planner:
                 plan.add("deck.delete", f"Delete unmanaged deck '{d}'", {"name": d, "cardsToo": False})
 
         # Models
+        self._log_verbose("Analyzing model configuration")
         existing_models = set(self.backend.list_models())
         desired_models = {m.name for m in cfg.models}
+        self._log_verbose(f"Found {len(existing_models)} existing models, {len(desired_models)} desired models")
         for m in cfg.models:
             if m.name not in existing_models:
                 plan.add(
@@ -93,6 +104,7 @@ class Planner:
                 plan.add("model.delete", f"Delete unmanaged model '{m}'", {"name": m})
 
         # Notes
+        self._log_verbose(f"Analyzing note configuration ({len(cfg.notes)} notes)")
         for n in cfg.notes:
             # We require model's uniqueField to upsert
             model_cfg = next((m for m in cfg.models if m.name == n.model), None)
@@ -152,14 +164,21 @@ class Planner:
         # Prune notes not in config is optional and coarse; omitted for brevity or future work
         # It can be implemented by querying all notes in target decks/models and subtracting the upsert keys from config.
 
+        self._log_verbose(f"Plan generation complete. Generated {len(plan.steps)} steps")
         return plan
 
 
-def process_media_files(backend: Backend, media_paths: List[str], config_dir: Path) -> Dict[str, str]:
+def process_media_files(backend: Backend, media_paths: List[str], config_dir: Path, verbose: bool = False) -> Dict[str, str]:
     """Process media files and return mapping of original paths to Anki filenames."""
+    def _log_verbose(message: str) -> None:
+        if verbose:
+            print(f"[MEDIA] {message}")
+    
+    _log_verbose(f"Processing {len(media_paths)} media files")
     media_mapping = {}
 
     for media_path in media_paths:
+        _log_verbose(f"Processing media file: {media_path}")
         # Convert to Path and handle relative paths
         path = Path(media_path)
         if not path.is_absolute():
@@ -179,26 +198,39 @@ def process_media_files(backend: Backend, media_paths: List[str], config_dir: Pa
         existing_files = backend.get_media_files_names(filename)
         if filename not in existing_files:
             # Upload the file
+            _log_verbose(f"Uploading new media file: {filename}")
             stored_name = backend.store_media_file(filename, file_data)
             media_mapping[media_path] = stored_name
+            _log_verbose(f"Media file uploaded successfully as: {stored_name}")
         else:
             # File already exists, use existing name
+            _log_verbose(f"Media file already exists in Anki: {filename}")
             media_mapping[media_path] = filename
 
+    _log_verbose(f"Media processing completed. Processed {len(media_mapping)} files")
     return media_mapping
 
 
 class Applier:
-    def __init__(self, backend: Backend):
+    def __init__(self, backend: Backend, verbose: bool = False):
         self.backend = backend
+        self.verbose = verbose
+    
+    def _log_verbose(self, message: str) -> None:
+        """Log message if verbose mode is enabled."""
+        if self.verbose:
+            print(f"[APPLIER] {message}")
 
     def apply(self, plan: Plan, config_dir: Path = None) -> None:
         # Get config directory for resolving relative media paths
         if config_dir is None:
             config_dir = Path.cwd()
 
+        self._log_verbose(f"Starting to apply plan with {len(plan.steps)} steps")
+        
         # Execute in order
-        for s in plan.steps:
+        for i, s in enumerate(plan.steps, 1):
+            self._log_verbose(f"Step {i}/{len(plan.steps)}: [{s.kind}] {s.description}")
             if s.kind == "deck.create":
                 self.backend.create_deck(s.payload["name"])
             elif s.kind == "deck.delete":
@@ -218,17 +250,19 @@ class Applier:
                 n = s.payload["note"]
                 # Process media files if present
                 if "media" in n and n["media"]:
-                    media_mapping = process_media_files(self.backend, n["media"], config_dir)
+                    media_mapping = process_media_files(self.backend, n["media"], config_dir, self.verbose)
                     # TODO: We could optionally replace media references in field content
                     # For now, user needs to reference media files by filename in their fields
                 self.backend.add_note(n["model"], n["deck"], n["fields"], n.get("tags", []))
             elif s.kind == "note.update":
                 # Handle media for updates too if present in payload
                 if "media" in s.payload and s.payload["media"]:
-                    media_mapping = process_media_files(self.backend, s.payload["media"], config_dir)
+                    media_mapping = process_media_files(self.backend, s.payload["media"], config_dir, self.verbose)
                 self.backend.update_note_fields(s.payload["id"], s.payload["fields"])
             elif s.kind.startswith("note.error") or s.kind == "model.note":
                 # No-op; informational only
                 continue
             else:
                 raise RuntimeError(f"Unknown plan step kind: {s.kind}")
+        
+        self._log_verbose(f"Plan application completed successfully")
