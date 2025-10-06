@@ -176,6 +176,25 @@ ankiday list --decks --models --notes-limit 20
 ankiday delete --deck "My::Deck" --model "MyModel" --note-query "deck:My::Deck tag:obsolete"
 ```
 
+### Verbose Output
+
+All commands support the `--verbose` (or `-v`) flag for detailed output:
+
+```bash
+# Show detailed output during operations
+ankiday diff -f config.yaml --verbose
+ankiday apply -f config.yaml --verbose
+ankiday list --decks --verbose
+```
+
+Verbose mode shows:
+- AnkiConnect API calls and parameters
+- Step-by-step progress during plan generation and execution
+- Media file upload details
+- Success/failure status for each operation
+
+This is useful for debugging, learning how AnkiDAY works, and monitoring progress during large operations.
+
 Configuration design (YAML)
 ```yaml
 version: 1

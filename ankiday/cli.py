@@ -14,9 +14,9 @@ from .backends.ankiconnect import AnkiConnectBackend
 app = typer.Typer(add_completion=False, help="Manage Anki decks, models, and notes from YAML config")
 
 
-def _load_backend(cfg: Config):
+def _load_backend(cfg: Config, verbose: bool = False):
     if cfg.backend == "ankiConnect":
-        return AnkiConnectBackend(base_url=cfg.server.url, timeout=cfg.server.timeoutSeconds)
+        return AnkiConnectBackend(base_url=cfg.server.url, timeout=cfg.server.timeoutSeconds, verbose=verbose)
     else:
         raise typer.BadParameter("Only 'ankiConnect' backend is implemented at the moment")
 
@@ -34,10 +34,11 @@ def validate(
 def diff(
     file: Path = typer.Option(..., "-f", "--file", exists=True, readable=True, help="YAML config"),
     json_out: bool = typer.Option(False, "--json", help="Output machine-readable diff"),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output with detailed progress"),
 ) -> None:
     cfg = load_config(file)
-    backend = _load_backend(cfg)
-    planner = Planner(backend)
+    backend = _load_backend(cfg, verbose=verbose)
+    planner = Planner(backend, verbose=verbose)
     plan = planner.build_plan(cfg)
     if json_out:
         typer.echo(json.dumps(plan.to_dict(), indent=2))
@@ -49,10 +50,11 @@ def diff(
 def apply(
     file: Path = typer.Option(..., "-f", "--file", exists=True, readable=True, help="YAML config"),
     assume_yes: bool = typer.Option(False, "-y", "--yes", help="Do not prompt for confirmation"),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output with detailed progress"),
 ) -> None:
     cfg = load_config(file)
-    backend = _load_backend(cfg)
-    planner = Planner(backend)
+    backend = _load_backend(cfg, verbose=verbose)
+    planner = Planner(backend, verbose=verbose)
     plan = planner.build_plan(cfg)
     if not plan.steps:
         typer.secho("Nothing to do.", fg=typer.colors.GREEN)
@@ -62,7 +64,7 @@ def apply(
         proceed = typer.confirm("Apply these changes?", default=False)
         if not proceed:
             raise typer.Exit(code=1)
-    Applier(backend).apply(plan, config_dir=file.parent)
+    Applier(backend, verbose=verbose).apply(plan, config_dir=file.parent)
     typer.secho("Apply complete.", fg=typer.colors.GREEN)
 
 
@@ -71,12 +73,13 @@ def list(
     decks: bool = typer.Option(False, "--decks", help="List decks"),
     models: bool = typer.Option(False, "--models", help="List models"),
     notes_limit: int = typer.Option(0, "--notes-limit", help="List up to N notes"),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output with detailed progress"),
 ) -> None:
     """List current Anki entities via backend."""
     # Default to listing decks if nothing chosen
     if not any([decks, models, notes_limit]):
         decks = True
-    backend = AnkiConnectBackend()
+    backend = AnkiConnectBackend(verbose=verbose)
     if decks:
         names = backend.list_decks()
         typer.echo("Decks:")
@@ -107,8 +110,9 @@ def delete(
     model: Optional[str] = typer.Option(None, "--model", help="Delete model (note type) by name"),
     note_query: Optional[str] = typer.Option(None, "--note-query", help="JQL-like Anki browse query for notes to delete"),
     yes: bool = typer.Option(False, "-y", "--yes", help="Do not prompt for confirmation"),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output with detailed progress"),
 ) -> None:
-    backend = AnkiConnectBackend()
+    backend = AnkiConnectBackend(verbose=verbose)
     actions = []
     if deck:
         actions.append(f"Delete deck '{deck}' (cardsToo={cards_too})")
