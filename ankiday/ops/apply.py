@@ -36,9 +36,10 @@ class Plan:
 
 
 class Planner:
-    def __init__(self, backend: Backend, verbose: bool = False):
+    def __init__(self, backend: Backend, verbose: bool = False, skip_model_validation: bool = False):
         self.backend = backend
         self.verbose = verbose
+        self.skip_model_validation = skip_model_validation
     
     def _log_verbose(self, message: str) -> None:
         """Log message if verbose mode is enabled."""
@@ -105,16 +106,35 @@ class Planner:
 
         # Notes
         self._log_verbose(f"Analyzing note configuration ({len(cfg.notes)} notes)")
+        
+        # Get existing models from Anki if we're skipping validation
+        existing_anki_models = set(self.backend.list_models()) if self.skip_model_validation else set()
+        
         for n in cfg.notes:
             # We require model's uniqueField to upsert
             model_cfg = next((m for m in cfg.models if m.name == n.model), None)
+            
             if not model_cfg:
-                plan.add(
-                    "note.error",
-                    f"Note targets unknown model '{n.model}'",
-                    {"note": n.model_dump()},
-                )
-                continue
+                if self.skip_model_validation and n.model in existing_anki_models:
+                    # Model exists in Anki but not in config - skip validation and add note without unique field check
+                    # We'll let AnkiConnect handle any errors during actual note creation
+                    self._log_verbose(f"Skipping model validation for '{n.model}' - assuming it exists in Anki")
+                    note_data = n.model_dump()
+                    media_desc = f" with {len(n.media)} media files" if n.media else ""
+                    plan.add(
+                        "note.add",
+                        f"Add note to deck '{n.deck}' model '{n.model}' (model validation skipped){media_desc}",
+                        {"note": note_data},
+                    )
+                    continue
+                else:
+                    plan.add(
+                        "note.error",
+                        f"Note targets unknown model '{n.model}'",
+                        {"note": n.model_dump()},
+                    )
+                    continue
+                    
             uniq = model_cfg.uniqueField
             uniq_val = n.fields.get(uniq)
             if not uniq_val:

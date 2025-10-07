@@ -176,7 +176,35 @@ ankiday list --decks --models --notes-limit 20
 ankiday delete --deck "My::Deck" --model "MyModel" --note-query "deck:My::Deck tag:obsolete"
 ```
 
-### Verbose Output
+### Advanced Features
+
+#### Skip Model Validation
+
+When working with separate model definition files, you can skip model validation using the `--skip-model-validation` flag:
+
+```bash
+# Validate config without checking if models are defined in the same file
+ankiday validate -f notes.yaml --skip-model-validation
+
+# Generate diff relying on models that exist in Anki
+ankiday diff -f notes.yaml --skip-model-validation
+
+# Apply notes that reference externally defined models
+ankiday apply -f notes.yaml --skip-model-validation
+```
+
+**Use Case**: When you have:
+- Model definitions in a separate file (e.g., `models.yaml`)
+- Note definitions that reference those models in other files
+- Models already applied to Anki from previous operations
+
+**Workflow**:
+1. Apply your models file: `ankiday apply -f models.yaml`
+2. Apply notes files: `ankiday apply -f notes.yaml --skip-model-validation`
+
+AnkiConnect will still validate that referenced models exist during actual note creation.
+
+#### Verbose Output
 
 All commands support the `--verbose` (or `-v`) flag for detailed output:
 
@@ -187,13 +215,40 @@ ankiday apply -f config.yaml --verbose
 ankiday list --decks --verbose
 ```
 
-Verbose mode shows:
-- AnkiConnect API calls and parameters
-- Step-by-step progress during plan generation and execution
-- Media file upload details
-- Success/failure status for each operation
+**What verbose mode shows:**
+- **Backend Operations**: AnkiConnect API calls, parameters, and responses
+- **Planning Phase**: Analysis of existing vs desired entities, step-by-step plan generation
+- **Apply Phase**: Progress through each planned step, detailed execution status
+- **Media Processing**: File uploads, existing file detection, processing results
+- **Success/Failure**: Detailed status for each operation
 
-This is useful for debugging, learning how AnkiDAY works, and monitoring progress during large operations.
+**Example comparison:**
+
+*Normal output:*
+```
+Planned changes:
+- [deck.create] Create deck 'Languages::Spanish'
+- [model.create] Create model 'BasicExt' with 3 fields and 1 templates
+```
+
+*Verbose output:*
+```
+[VERBOSE] Invoking AnkiConnect action: deckNames
+[VERBOSE] Action deckNames completed successfully
+[PLANNER] Starting plan generation
+[PLANNER] Analyzing deck configuration
+[PLANNER] Found 1 existing decks, 1 desired decks
+[PLANNER] Plan generation complete. Generated 2 steps
+Planned changes:
+- [deck.create] Create deck 'Languages::Spanish'
+- [model.create] Create model 'BasicExt' with 3 fields and 1 templates
+```
+
+**Benefits:**
+- **Debugging**: Shows exactly which AnkiConnect operations fail
+- **Learning**: Understand how AnkiDAY works internally
+- **Monitoring**: Track progress during long operations
+- **Development**: Useful for extending and debugging AnkiDAY
 
 Configuration design (YAML)
 ```yaml
