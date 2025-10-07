@@ -24,9 +24,20 @@ def _load_backend(cfg: Config, verbose: bool = False):
 @app.command()
 def validate(
     file: Path = typer.Option(..., "-f", "--file", exists=True, readable=True, help="YAML config"),
+    skip_model_validation: bool = typer.Option(False, "--skip-model-validation", help="Skip model validation and rely on existing models in Anki"),
 ) -> None:
     """Validate YAML config file."""
-    _ = load_config(file)
+    cfg = load_config(file)
+    
+    if not skip_model_validation:
+        # Perform model reference validation
+        model_names = {m.name for m in cfg.models}
+        for note in cfg.notes:
+            if note.model not in model_names:
+                typer.secho(f"Error: Note references unknown model '{note.model}'. Available models in config: {sorted(model_names)}", fg=typer.colors.RED)
+                typer.secho("Hint: Use --skip-model-validation if the model exists in Anki but not in this config file.", fg=typer.colors.YELLOW)
+                raise typer.Exit(code=1)
+    
     typer.secho("Config is valid.", fg=typer.colors.GREEN)
 
 
@@ -35,10 +46,11 @@ def diff(
     file: Path = typer.Option(..., "-f", "--file", exists=True, readable=True, help="YAML config"),
     json_out: bool = typer.Option(False, "--json", help="Output machine-readable diff"),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output with detailed progress"),
+    skip_model_validation: bool = typer.Option(False, "--skip-model-validation", help="Skip model validation and rely on existing models in Anki"),
 ) -> None:
     cfg = load_config(file)
     backend = _load_backend(cfg, verbose=verbose)
-    planner = Planner(backend, verbose=verbose)
+    planner = Planner(backend, verbose=verbose, skip_model_validation=skip_model_validation)
     plan = planner.build_plan(cfg)
     if json_out:
         typer.echo(json.dumps(plan.to_dict(), indent=2))
@@ -51,10 +63,11 @@ def apply(
     file: Path = typer.Option(..., "-f", "--file", exists=True, readable=True, help="YAML config"),
     assume_yes: bool = typer.Option(False, "-y", "--yes", help="Do not prompt for confirmation"),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output with detailed progress"),
+    skip_model_validation: bool = typer.Option(False, "--skip-model-validation", help="Skip model validation and rely on existing models in Anki"),
 ) -> None:
     cfg = load_config(file)
     backend = _load_backend(cfg, verbose=verbose)
-    planner = Planner(backend, verbose=verbose)
+    planner = Planner(backend, verbose=verbose, skip_model_validation=skip_model_validation)
     plan = planner.build_plan(cfg)
     if not plan.steps:
         typer.secho("Nothing to do.", fg=typer.colors.GREEN)
